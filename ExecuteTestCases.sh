@@ -1,6 +1,7 @@
 #!/bin/bash
 set +e
 
+# Always run from script directory
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
@@ -21,7 +22,11 @@ newman run DemoAPIs.postman_collection.json \
   -e DemoAPIs.postman_environment.json \
   --color on \
   -r cli,htmlextra \
-  --reporter-htmlextra-export reports/newman-report.html
+  --reporter-htmlextra-export reports/newman-report.html \
+  --reporter-htmlextra-title "Postman API Automation Report" \
+  --reporter-htmlextra-browserTitle "Postman API Automation" \
+  --reporter-htmlextra-showOnlyFails false \
+  --reporter-htmlextra-darkTheme true
 
 NEWMAN_EXIT_CODE=$?
 
