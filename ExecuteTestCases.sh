@@ -1,29 +1,39 @@
 #!/bin/bash
-set -e
+set +e
 
-# Always run from script location
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 mkdir -p reports
 
+echo "=============================="
 echo "Node version:"
 node -v
-
 echo "NPM version:"
 npm -v
-
 echo "Newman version:"
-npx newman -v
+newman -v
+echo "=============================="
 
-echo "Running Postman tests..."
-npx newman run DemoAPIs.postman_collection.json \
-  -e DemoAPIs.postman_environment.json 
+echo "Running Postman tests (console + HTML report)..."
 
-echo "Generating HTML Report..."
-npx newman run DemoAPIs.postman_collection.json \
+newman run DemoAPIs.postman_collection.json \
   -e DemoAPIs.postman_environment.json \
-  -r htmlextra \
+  --color on \
+  -r cli,htmlextra \
   --reporter-htmlextra-export reports/newman-report.html
 
-echo "Postman execution completed"
+NEWMAN_EXIT_CODE=$?
+
+echo "=============================="
+echo "Newman exit code: $NEWMAN_EXIT_CODE"
+echo "=============================="
+
+# Fail Jenkins build if tests fail
+if [ $NEWMAN_EXIT_CODE -ne 0 ]; then
+  echo "❌ Some API tests FAILED"
+  exit 1
+else
+  echo "✅ All API tests PASSED"
+  exit 0
+fi
