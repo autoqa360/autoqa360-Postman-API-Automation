@@ -1,0 +1,1748 @@
+{
+	"info": {
+		"_postman_id": "e197e861-ab47-4d3b-ae68-03b6e5bb4b24",
+		"name": "Demo Collection : Dummy APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "8408586"
+	},
+	"item": [
+		{
+			"name": "Login",
+			"item": [
+				{
+					"name": "As a user, I'm creating Access Token and storing into the env variable.",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Parse response JSON\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"// Store token in environment variable with \"Bearer\" prefix\r",
+									"pm.environment.set(\"accessToken\", \"Bearer \" + jsonData.access_token);\r",
+									"\r",
+									"// Retrieve stored token\r",
+									"var getAccessToken = pm.environment.get(\"accessToken\");\r",
+									"\r",
+									"// ✅ TestCase#1: Verify token is stored correctly\r",
+									"pm.test(\"Creating access token and storing in the env variable\", function () {\r",
+									"    pm.expect(getAccessToken).to.eql(\"Bearer \" + jsonData.access_token);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"/**\r",
+									" * Pre-request Script\r",
+									" * Purpose: Ensure all required variables exist in the ENVIRONMENT\r",
+									" * and clear old access token before login\r",
+									" */\r",
+									"\r",
+									"// Base URL\r",
+									"if (!pm.environment.get(\"baseUrl\")) {\r",
+									"    pm.environment.set(\"baseUrl\", \"https://api.escuelajs.co/api/v1\");\r",
+									"}\r",
+									"\r",
+									"// Login email\r",
+									"if (!pm.environment.get(\"email\")) {\r",
+									"    pm.environment.set(\"email\", \"admin@mail.com\");\r",
+									"}\r",
+									"\r",
+									"// Login password\r",
+									"if (!pm.environment.get(\"password\")) {\r",
+									"    pm.environment.set(\"password\", \"admin123\");\r",
+									"}\r",
+									"\r",
+									"// Clear any old access token before login\r",
+									"pm.environment.set(\"accessToken\", \"\");\r",
+									"\r",
+									"// Optional cleanup (safe defaults for product flow)\r",
+									"pm.environment.set(\"productId\", \"\");\r",
+									"pm.environment.set(\"categoryId\", \"\");\r",
+									"pm.environment.set(\"invalidProductId\", \"\");\r",
+									"\r",
+									"console.log(\"Environment variables initialized successfully\");\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "Api-Key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"{{email}}\",\r\n  \"password\": \"{{password}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Product",
+			"item": [
+				{
+					"name": "Prerequisite",
+					"item": [
+						{
+							"name": "Create Category for the Products",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');\r",
+											"\r",
+											"// Generate a unique category name using timestamp\r",
+											"const uniqueCategoryName = \"Automation Category \" + moment().format(\"YYYYMMDD_HHmmss\");\r",
+											"\r",
+											"// Store it in the ENVIRONMENT (not collection)\r",
+											"pm.environment.set(\"categoryName\", uniqueCategoryName);\r",
+											"\r",
+											"console.log(\"Generated Category Name (env):\", uniqueCategoryName);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify category is created successfully\r",
+											"pm.test(\"TC_01 | Category should be created successfully\", () => {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Store categoryId in environment\r",
+											"pm.test(\"TC_02 | categoryId should be stored in environment\", () => {\r",
+											"    pm.expect(response).to.have.property(\"id\");\r",
+											"    pm.environment.set(\"categoryId\", response.id);\r",
+											"    console.log(\"Category ID stored (env):\", response.id);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "Authorization",
+										"value": "{{accessToken}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"name\": \"{{categoryName}}\",\r\n  \"image\": \"https://placeimg.com/640/480/tech\"\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/categories",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"categories"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Post",
+					"item": [
+						{
+							"name": "As a user, I should be able to validate Json Schema for request and response body.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const moment = require('moment');\r",
+											"\r",
+											"// Generate a unique product title using timestamp\r",
+											"const uniqueProductTitle = \"Automation Product \" + moment().format(\"YYYYMMDD_HHmmss\");\r",
+											"\r",
+											"// Store it in the ENVIRONMENT (not collection)\r",
+											"pm.environment.set(\"productTitle\", uniqueProductTitle);\r",
+											"\r",
+											"console.log(\"Generated Product Title (env):\", uniqueProductTitle);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify response status code is 201 (Created)\r",
+											"pm.test(\"TC_01 | Status code should be 201\", () => {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Verify product is created and productId is stored in environment\r",
+											"pm.test(\"TC_02 | Product should be created and productId stored in environment\", () => {\r",
+											"    pm.expect(response).to.have.property(\"id\").that.is.a(\"number\");\r",
+											"    pm.environment.set(\"productId\", response.id);\r",
+											"    console.log(\"Product ID stored (env):\", response.id);\r",
+											"});\r",
+											"\r",
+											"// TC_03: Validate response schema\r",
+											"pm.test(\"TC_03 | Response schema should be valid\", () => {\r",
+											"    pm.expect(response).to.have.property(\"id\").that.is.a(\"number\");\r",
+											"    pm.expect(response).to.have.property(\"title\").that.is.a(\"string\");\r",
+											"    pm.expect(response).to.have.property(\"price\").that.is.a(\"number\");\r",
+											"    pm.expect(response).to.have.property(\"description\").that.is.a(\"string\");\r",
+											"    pm.expect(response).to.have.property(\"category\");\r",
+											"    pm.expect(response).to.have.property(\"images\").that.is.an(\"array\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{accessToken}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"title\": \"{{productTitle}}\",\r\n  \"price\": 999,\r\n  \"description\": \"Product created via automation\",\r\n  \"categoryId\": {{categoryId}},\r\n  \"images\": [\"https://placeimg.com/640/480/any\"]\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/products",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GetUser",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://reqres.in/api/users?page=2",
+											"protocol": "https",
+											"host": [
+												"reqres",
+												"in"
+											],
+											"path": [
+												"api",
+												"users"
+											],
+											"query": [
+												{
+													"key": "page",
+													"value": "2"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Date",
+											"value": "Fri, 09 Aug 2019 17:22:02 GMT"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Transfer-Encoding",
+											"value": "chunked"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										},
+										{
+											"key": "Set-Cookie",
+											"value": "__cfduid=d05f55a81e418ecc7bad804a0cc64c1ff1565371322; expires=Sat, 08-Aug-20 17:22:02 GMT; path=/; domain=.reqres.in; HttpOnly; Secure"
+										},
+										{
+											"key": "X-Powered-By",
+											"value": "Express"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Etag",
+											"value": "W/\"21c-V3l8h04l5/8zLV+i3u8GJo8G3Y8\""
+										},
+										{
+											"key": "Via",
+											"value": "1.1 vegur"
+										},
+										{
+											"key": "CF-Cache-Status",
+											"value": "HIT"
+										},
+										{
+											"key": "Age",
+											"value": "6288"
+										},
+										{
+											"key": "Expires",
+											"value": "Fri, 09 Aug 2019 21:22:02 GMT"
+										},
+										{
+											"key": "Cache-Control",
+											"value": "public, max-age=14400"
+										},
+										{
+											"key": "Expect-CT",
+											"value": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\""
+										},
+										{
+											"key": "Vary",
+											"value": "Accept-Encoding"
+										},
+										{
+											"key": "Server",
+											"value": "cloudflare"
+										},
+										{
+											"key": "CF-RAY",
+											"value": "503b68ed4f60cbdc-SIN"
+										},
+										{
+											"key": "Content-Encoding",
+											"value": "gzip"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"page\": 2,\n    \"per_page\": 3,\n    \"total\": 12,\n    \"total_pages\": 4,\n    \"data\": [\n        {\n            \"id\": 4,\n            \"email\": \"eve.holt@reqres.in\",\n            \"first_name\": \"Eve\",\n            \"last_name\": \"Holt\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/marcoramires/128.jpg\"\n        },\n        {\n            \"id\": 5,\n            \"email\": \"charles.morris@reqres.in\",\n            \"first_name\": \"Charles\",\n            \"last_name\": \"Morris\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/stephenmoon/128.jpg\"\n        },\n        {\n            \"id\": 6,\n            \"email\": \"tracey.ramos@reqres.in\",\n            \"first_name\": \"Tracey\",\n            \"last_name\": \"Ramos\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/bigmancho/128.jpg\"\n        }\n    ]\n}"
+								}
+							]
+						},
+						{
+							"name": "As a user, I should not be able to add product without 'title' property, I should see 500 error",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify status code is 500 when title property is missing\r",
+											"pm.test(\"TC_01 | Status code should be 500 when title is missing\", () => {\r",
+											"    pm.response.to.have.status(500);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Verify error response contains statusCode = 500\r",
+											"pm.test(\"TC_02 | Error response should contain statusCode 500\", () => {\r",
+											"    pm.expect(response).to.have.property(\"statusCode\", 500);\r",
+											"});\r",
+											"\r",
+											"// TC_03: Verify error message is 'Internal server error'\r",
+											"pm.test(\"TC_03 | Error message should be 'Internal server error'\", () => {\r",
+											"    pm.expect(response).to.have.property(\"message\");\r",
+											"    pm.expect(response.message.toLowerCase()).to.include(\"internal\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{accessToken}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"price\": 999,\r\n  \"description\": \"Product created via automation\",\r\n  \"categoryId\": {{categoryId}},\r\n  \"images\": [\"https://placeimg.com/640/480/any\"]\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/products",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GetUser",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://reqres.in/api/users?page=2",
+											"protocol": "https",
+											"host": [
+												"reqres",
+												"in"
+											],
+											"path": [
+												"api",
+												"users"
+											],
+											"query": [
+												{
+													"key": "page",
+													"value": "2"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Date",
+											"value": "Fri, 09 Aug 2019 17:22:02 GMT"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Transfer-Encoding",
+											"value": "chunked"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										},
+										{
+											"key": "Set-Cookie",
+											"value": "__cfduid=d05f55a81e418ecc7bad804a0cc64c1ff1565371322; expires=Sat, 08-Aug-20 17:22:02 GMT; path=/; domain=.reqres.in; HttpOnly; Secure"
+										},
+										{
+											"key": "X-Powered-By",
+											"value": "Express"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Etag",
+											"value": "W/\"21c-V3l8h04l5/8zLV+i3u8GJo8G3Y8\""
+										},
+										{
+											"key": "Via",
+											"value": "1.1 vegur"
+										},
+										{
+											"key": "CF-Cache-Status",
+											"value": "HIT"
+										},
+										{
+											"key": "Age",
+											"value": "6288"
+										},
+										{
+											"key": "Expires",
+											"value": "Fri, 09 Aug 2019 21:22:02 GMT"
+										},
+										{
+											"key": "Cache-Control",
+											"value": "public, max-age=14400"
+										},
+										{
+											"key": "Expect-CT",
+											"value": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\""
+										},
+										{
+											"key": "Vary",
+											"value": "Accept-Encoding"
+										},
+										{
+											"key": "Server",
+											"value": "cloudflare"
+										},
+										{
+											"key": "CF-RAY",
+											"value": "503b68ed4f60cbdc-SIN"
+										},
+										{
+											"key": "Content-Encoding",
+											"value": "gzip"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"page\": 2,\n    \"per_page\": 3,\n    \"total\": 12,\n    \"total_pages\": 4,\n    \"data\": [\n        {\n            \"id\": 4,\n            \"email\": \"eve.holt@reqres.in\",\n            \"first_name\": \"Eve\",\n            \"last_name\": \"Holt\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/marcoramires/128.jpg\"\n        },\n        {\n            \"id\": 5,\n            \"email\": \"charles.morris@reqres.in\",\n            \"first_name\": \"Charles\",\n            \"last_name\": \"Morris\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/stephenmoon/128.jpg\"\n        },\n        {\n            \"id\": 6,\n            \"email\": \"tracey.ramos@reqres.in\",\n            \"first_name\": \"Tracey\",\n            \"last_name\": \"Ramos\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/bigmancho/128.jpg\"\n        }\n    ]\n}"
+								}
+							]
+						},
+						{
+							"name": "As a user, I should not be able to add product when 'title' value is null, I should see 500 error",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify status code is 500 when title property is missing\r",
+											"pm.test(\"TC_01 | Status code should be 500 when title is missing\", () => {\r",
+											"    pm.response.to.have.status(500);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Verify error response contains statusCode = 500\r",
+											"pm.test(\"TC_02 | Error response should contain statusCode 500\", () => {\r",
+											"    pm.expect(response).to.have.property(\"statusCode\", 500);\r",
+											"});\r",
+											"\r",
+											"// TC_03: Verify error message is 'Internal server error'\r",
+											"pm.test(\"TC_03 | Error message should be 'Internal server error'\", () => {\r",
+											"    pm.expect(response).to.have.property(\"message\");\r",
+											"    pm.expect(response.message.toLowerCase()).to.include(\"internal\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{accessToken}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"title\": null,\r\n  \"price\": 999,\r\n  \"description\": \"Product created via automation\",\r\n  \"categoryId\": {{categoryId}},\r\n  \"images\": [\"https://placeimg.com/640/480/any\"]\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/products",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GetUser",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://reqres.in/api/users?page=2",
+											"protocol": "https",
+											"host": [
+												"reqres",
+												"in"
+											],
+											"path": [
+												"api",
+												"users"
+											],
+											"query": [
+												{
+													"key": "page",
+													"value": "2"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Date",
+											"value": "Fri, 09 Aug 2019 17:22:02 GMT"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Transfer-Encoding",
+											"value": "chunked"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										},
+										{
+											"key": "Set-Cookie",
+											"value": "__cfduid=d05f55a81e418ecc7bad804a0cc64c1ff1565371322; expires=Sat, 08-Aug-20 17:22:02 GMT; path=/; domain=.reqres.in; HttpOnly; Secure"
+										},
+										{
+											"key": "X-Powered-By",
+											"value": "Express"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Etag",
+											"value": "W/\"21c-V3l8h04l5/8zLV+i3u8GJo8G3Y8\""
+										},
+										{
+											"key": "Via",
+											"value": "1.1 vegur"
+										},
+										{
+											"key": "CF-Cache-Status",
+											"value": "HIT"
+										},
+										{
+											"key": "Age",
+											"value": "6288"
+										},
+										{
+											"key": "Expires",
+											"value": "Fri, 09 Aug 2019 21:22:02 GMT"
+										},
+										{
+											"key": "Cache-Control",
+											"value": "public, max-age=14400"
+										},
+										{
+											"key": "Expect-CT",
+											"value": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\""
+										},
+										{
+											"key": "Vary",
+											"value": "Accept-Encoding"
+										},
+										{
+											"key": "Server",
+											"value": "cloudflare"
+										},
+										{
+											"key": "CF-RAY",
+											"value": "503b68ed4f60cbdc-SIN"
+										},
+										{
+											"key": "Content-Encoding",
+											"value": "gzip"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"page\": 2,\n    \"per_page\": 3,\n    \"total\": 12,\n    \"total_pages\": 4,\n    \"data\": [\n        {\n            \"id\": 4,\n            \"email\": \"eve.holt@reqres.in\",\n            \"first_name\": \"Eve\",\n            \"last_name\": \"Holt\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/marcoramires/128.jpg\"\n        },\n        {\n            \"id\": 5,\n            \"email\": \"charles.morris@reqres.in\",\n            \"first_name\": \"Charles\",\n            \"last_name\": \"Morris\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/stephenmoon/128.jpg\"\n        },\n        {\n            \"id\": 6,\n            \"email\": \"tracey.ramos@reqres.in\",\n            \"first_name\": \"Tracey\",\n            \"last_name\": \"Ramos\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/bigmancho/128.jpg\"\n        }\n    ]\n}"
+								}
+							]
+						},
+						{
+							"name": "As a user, I should not be able to add product when price is negative, I should see 400 error",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify status code is 400 when price is negative\r",
+											"pm.test(\"TC_01 | Status code should be 400 for negative price\", () => {\r",
+											"    pm.response.to.have.status(400);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Verify error field is 'Bad Request'\r",
+											"pm.test(\"TC_02 | Error type should be 'Bad Request'\", () => {\r",
+											"    pm.expect(response).to.have.property(\"error\", \"Bad Request\");\r",
+											"});\r",
+											"\r",
+											"// TC_03: Verify statusCode field is 400\r",
+											"pm.test(\"TC_03 | statusCode should be 400\", () => {\r",
+											"    pm.expect(response).to.have.property(\"statusCode\", 400);\r",
+											"});\r",
+											"\r",
+											"// TC_04: Verify message is an array\r",
+											"pm.test(\"TC_04 | Error message should be an array\", () => {\r",
+											"    pm.expect(response).to.have.property(\"message\").that.is.an(\"array\");\r",
+											"});\r",
+											"\r",
+											"// TC_05: Verify correct validation error message\r",
+											"pm.test(\"TC_05 | Error message should mention positive price\", () => {\r",
+											"    pm.expect(response.message[0].toLowerCase())\r",
+											"      .to.include(\"price must be a positive number\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{accessToken}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"title\": \"{{productTitle}}\",\r\n  \"price\": -999,\r\n  \"description\": \"Product created via automation\",\r\n  \"categoryId\": {{categoryId}},\r\n  \"images\": [\"https://placeimg.com/640/480/any\"]\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/products",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GetUser",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://reqres.in/api/users?page=2",
+											"protocol": "https",
+											"host": [
+												"reqres",
+												"in"
+											],
+											"path": [
+												"api",
+												"users"
+											],
+											"query": [
+												{
+													"key": "page",
+													"value": "2"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Date",
+											"value": "Fri, 09 Aug 2019 17:22:02 GMT"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Transfer-Encoding",
+											"value": "chunked"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										},
+										{
+											"key": "Set-Cookie",
+											"value": "__cfduid=d05f55a81e418ecc7bad804a0cc64c1ff1565371322; expires=Sat, 08-Aug-20 17:22:02 GMT; path=/; domain=.reqres.in; HttpOnly; Secure"
+										},
+										{
+											"key": "X-Powered-By",
+											"value": "Express"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Etag",
+											"value": "W/\"21c-V3l8h04l5/8zLV+i3u8GJo8G3Y8\""
+										},
+										{
+											"key": "Via",
+											"value": "1.1 vegur"
+										},
+										{
+											"key": "CF-Cache-Status",
+											"value": "HIT"
+										},
+										{
+											"key": "Age",
+											"value": "6288"
+										},
+										{
+											"key": "Expires",
+											"value": "Fri, 09 Aug 2019 21:22:02 GMT"
+										},
+										{
+											"key": "Cache-Control",
+											"value": "public, max-age=14400"
+										},
+										{
+											"key": "Expect-CT",
+											"value": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\""
+										},
+										{
+											"key": "Vary",
+											"value": "Accept-Encoding"
+										},
+										{
+											"key": "Server",
+											"value": "cloudflare"
+										},
+										{
+											"key": "CF-RAY",
+											"value": "503b68ed4f60cbdc-SIN"
+										},
+										{
+											"key": "Content-Encoding",
+											"value": "gzip"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"page\": 2,\n    \"per_page\": 3,\n    \"total\": 12,\n    \"total_pages\": 4,\n    \"data\": [\n        {\n            \"id\": 4,\n            \"email\": \"eve.holt@reqres.in\",\n            \"first_name\": \"Eve\",\n            \"last_name\": \"Holt\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/marcoramires/128.jpg\"\n        },\n        {\n            \"id\": 5,\n            \"email\": \"charles.morris@reqres.in\",\n            \"first_name\": \"Charles\",\n            \"last_name\": \"Morris\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/stephenmoon/128.jpg\"\n        },\n        {\n            \"id\": 6,\n            \"email\": \"tracey.ramos@reqres.in\",\n            \"first_name\": \"Tracey\",\n            \"last_name\": \"Ramos\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/bigmancho/128.jpg\"\n        }\n    ]\n}"
+								}
+							]
+						},
+						{
+							"name": "As a user, I should not be able to add product without categoryId, I should see 400 error",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify status code is 400 when categoryId is missing\r",
+											"pm.test(\"TC_01 | Status code should be 400 when categoryId is missing\", () => {\r",
+											"    pm.response.to.have.status(400);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Verify error type is 'Bad Request'\r",
+											"pm.test(\"TC_02 | Error type should be 'Bad Request'\", () => {\r",
+											"    pm.expect(response).to.have.property(\"error\", \"Bad Request\");\r",
+											"});\r",
+											"\r",
+											"// TC_03: Verify statusCode field is 400\r",
+											"pm.test(\"TC_03 | statusCode should be 400\", () => {\r",
+											"    pm.expect(response).to.have.property(\"statusCode\", 400);\r",
+											"});\r",
+											"\r",
+											"// TC_04: Verify message is an array\r",
+											"pm.test(\"TC_04 | Error message should be an array\", () => {\r",
+											"    pm.expect(response).to.have.property(\"message\").that.is.an(\"array\");\r",
+											"});\r",
+											"\r",
+											"// TC_05: Verify categoryId empty validation message\r",
+											"pm.test(\"TC_05 | Validation message should indicate categoryId is empty\", () => {\r",
+											"    pm.expect(\r",
+											"        response.message.some(msg =>\r",
+											"            msg.toLowerCase().includes(\"categoryid should not be empty\")\r",
+											"        )\r",
+											"    ).to.be.true;\r",
+											"});\r",
+											"\r",
+											"// TC_06: Verify categoryId type validation message\r",
+											"pm.test(\"TC_06 | Validation message should indicate categoryId must be a number\", () => {\r",
+											"    pm.expect(\r",
+											"        response.message.some(msg =>\r",
+											"            msg.toLowerCase().includes(\"categoryid must be a number\")\r",
+											"        )\r",
+											"    ).to.be.true;\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "{{accessToken}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"title\": \"{{productTitle}}\",\r\n  \"price\": 999,\r\n  \"description\": \"Product created via automation\",\r\n  \"images\": [\"https://placeimg.com/640/480/any\"]\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/products",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GetUser",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://reqres.in/api/users?page=2",
+											"protocol": "https",
+											"host": [
+												"reqres",
+												"in"
+											],
+											"path": [
+												"api",
+												"users"
+											],
+											"query": [
+												{
+													"key": "page",
+													"value": "2"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Date",
+											"value": "Fri, 09 Aug 2019 17:22:02 GMT"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Transfer-Encoding",
+											"value": "chunked"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										},
+										{
+											"key": "Set-Cookie",
+											"value": "__cfduid=d05f55a81e418ecc7bad804a0cc64c1ff1565371322; expires=Sat, 08-Aug-20 17:22:02 GMT; path=/; domain=.reqres.in; HttpOnly; Secure"
+										},
+										{
+											"key": "X-Powered-By",
+											"value": "Express"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Etag",
+											"value": "W/\"21c-V3l8h04l5/8zLV+i3u8GJo8G3Y8\""
+										},
+										{
+											"key": "Via",
+											"value": "1.1 vegur"
+										},
+										{
+											"key": "CF-Cache-Status",
+											"value": "HIT"
+										},
+										{
+											"key": "Age",
+											"value": "6288"
+										},
+										{
+											"key": "Expires",
+											"value": "Fri, 09 Aug 2019 21:22:02 GMT"
+										},
+										{
+											"key": "Cache-Control",
+											"value": "public, max-age=14400"
+										},
+										{
+											"key": "Expect-CT",
+											"value": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\""
+										},
+										{
+											"key": "Vary",
+											"value": "Accept-Encoding"
+										},
+										{
+											"key": "Server",
+											"value": "cloudflare"
+										},
+										{
+											"key": "CF-RAY",
+											"value": "503b68ed4f60cbdc-SIN"
+										},
+										{
+											"key": "Content-Encoding",
+											"value": "gzip"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"page\": 2,\n    \"per_page\": 3,\n    \"total\": 12,\n    \"total_pages\": 4,\n    \"data\": [\n        {\n            \"id\": 4,\n            \"email\": \"eve.holt@reqres.in\",\n            \"first_name\": \"Eve\",\n            \"last_name\": \"Holt\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/marcoramires/128.jpg\"\n        },\n        {\n            \"id\": 5,\n            \"email\": \"charles.morris@reqres.in\",\n            \"first_name\": \"Charles\",\n            \"last_name\": \"Morris\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/stephenmoon/128.jpg\"\n        },\n        {\n            \"id\": 6,\n            \"email\": \"tracey.ramos@reqres.in\",\n            \"first_name\": \"Tracey\",\n            \"last_name\": \"Ramos\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/bigmancho/128.jpg\"\n        }\n    ]\n}"
+								}
+							]
+						},
+						{
+							"name": "As a user, I should not be able to add product when images array is empty, I should see 400 error",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify status code is 400 when images array is empty\r",
+											"pm.test(\"TC_01 | Status code should be 400 when images array is empty\", () => {\r",
+											"    pm.response.to.have.status(400);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Verify error type is 'Bad Request'\r",
+											"pm.test(\"TC_02 | Error type should be 'Bad Request'\", () => {\r",
+											"    pm.expect(response).to.have.property(\"error\", \"Bad Request\");\r",
+											"});\r",
+											"\r",
+											"// TC_03: Verify statusCode field is 400\r",
+											"pm.test(\"TC_03 | statusCode should be 400\", () => {\r",
+											"    pm.expect(response).to.have.property(\"statusCode\", 400);\r",
+											"});\r",
+											"\r",
+											"// TC_04: Verify message is an array\r",
+											"pm.test(\"TC_04 | Error message should be an array\", () => {\r",
+											"    pm.expect(response).to.have.property(\"message\").that.is.an(\"array\");\r",
+											"});\r",
+											"\r",
+											"// TC_05: Verify validation message for empty images array\r",
+											"pm.test(\"TC_05 | Validation message should indicate images must contain at least 1 element\", () => {\r",
+											"    pm.expect(\r",
+											"        response.message.some(msg =>\r",
+											"            msg.toLowerCase().includes(\"images must contain at least\")\r",
+											"        )\r",
+											"    ).to.be.true;\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"title\": \"{{productTitle}}\",\r\n  \"price\": 999,\r\n  \"description\": \"Product created via automation\",\r\n  \"categoryId\": {{categoryId}},\r\n  \"images\": []\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/products",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "GetUser",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://reqres.in/api/users?page=2",
+											"protocol": "https",
+											"host": [
+												"reqres",
+												"in"
+											],
+											"path": [
+												"api",
+												"users"
+											],
+											"query": [
+												{
+													"key": "page",
+													"value": "2"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Date",
+											"value": "Fri, 09 Aug 2019 17:22:02 GMT"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Transfer-Encoding",
+											"value": "chunked"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										},
+										{
+											"key": "Set-Cookie",
+											"value": "__cfduid=d05f55a81e418ecc7bad804a0cc64c1ff1565371322; expires=Sat, 08-Aug-20 17:22:02 GMT; path=/; domain=.reqres.in; HttpOnly; Secure"
+										},
+										{
+											"key": "X-Powered-By",
+											"value": "Express"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Etag",
+											"value": "W/\"21c-V3l8h04l5/8zLV+i3u8GJo8G3Y8\""
+										},
+										{
+											"key": "Via",
+											"value": "1.1 vegur"
+										},
+										{
+											"key": "CF-Cache-Status",
+											"value": "HIT"
+										},
+										{
+											"key": "Age",
+											"value": "6288"
+										},
+										{
+											"key": "Expires",
+											"value": "Fri, 09 Aug 2019 21:22:02 GMT"
+										},
+										{
+											"key": "Cache-Control",
+											"value": "public, max-age=14400"
+										},
+										{
+											"key": "Expect-CT",
+											"value": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\""
+										},
+										{
+											"key": "Vary",
+											"value": "Accept-Encoding"
+										},
+										{
+											"key": "Server",
+											"value": "cloudflare"
+										},
+										{
+											"key": "CF-RAY",
+											"value": "503b68ed4f60cbdc-SIN"
+										},
+										{
+											"key": "Content-Encoding",
+											"value": "gzip"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"page\": 2,\n    \"per_page\": 3,\n    \"total\": 12,\n    \"total_pages\": 4,\n    \"data\": [\n        {\n            \"id\": 4,\n            \"email\": \"eve.holt@reqres.in\",\n            \"first_name\": \"Eve\",\n            \"last_name\": \"Holt\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/marcoramires/128.jpg\"\n        },\n        {\n            \"id\": 5,\n            \"email\": \"charles.morris@reqres.in\",\n            \"first_name\": \"Charles\",\n            \"last_name\": \"Morris\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/stephenmoon/128.jpg\"\n        },\n        {\n            \"id\": 6,\n            \"email\": \"tracey.ramos@reqres.in\",\n            \"first_name\": \"Tracey\",\n            \"last_name\": \"Ramos\",\n            \"avatar\": \"https://s3.amazonaws.com/uifaces/faces/twitter/bigmancho/128.jpg\"\n        }\n    ]\n}"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Get",
+					"item": [
+						{
+							"name": "As a user, I should be able to fetch product details using a valid productId",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify status code is 200 for valid productId\r",
+											"pm.test(\"TC_01 | Status code should be 200 for valid productId\", () => {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Verify fetched productId matches requested productId\r",
+											"pm.test(\"TC_02 | Product ID in response should match requested productId\", () => {\r",
+											"    pm.expect(response).to.have.property(\"id\");\r",
+											"    pm.expect(response.id).to.eql(Number(pm.environment.get(\"productId\")));\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"packages": {},
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/products/{{productId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products",
+										"{{productId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "As a user, when I try to fetch product details with an invalid productId, I should see 404 error.",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify status code is 400 for invalid productId format\r",
+											"pm.test(\"TC_01 | Status code should be 400 for invalid productId format\", () => {\r",
+											"    pm.response.to.have.status(400);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Verify error type is 'Bad Request'\r",
+											"pm.test(\"TC_02 | Error type should be 'Bad Request'\", () => {\r",
+											"    pm.expect(response).to.have.property(\"error\", \"Bad Request\");\r",
+											"});\r",
+											"\r",
+											"// TC_03: Verify statusCode field is 400\r",
+											"pm.test(\"TC_03 | statusCode should be 400\", () => {\r",
+											"    pm.expect(response).to.have.property(\"statusCode\", 400);\r",
+											"});\r",
+											"\r",
+											"// TC_04: Verify validation error message for numeric productId\r",
+											"pm.test(\"TC_04 | Validation message should indicate numeric productId is expected\", () => {\r",
+											"    pm.expect(response).to.have.property(\"message\");\r",
+											"    pm.expect(response.message.toLowerCase())\r",
+											"        .to.include(\"numeric string is expected\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"/**\r",
+											" * Pre-request Script (GET – Invalid Product)\r",
+											" * Purpose: Generate an invalid productId for GET request\r",
+											" * Uses ENVIRONMENT variables only\r",
+											" */\r",
+											"\r",
+											"const validProductId = pm.environment.get(\"productId\");\r",
+											"\r",
+											"let invalidProductId;\r",
+											"\r",
+											"// Ensure invalid ID is different from valid one\r",
+											"if (validProductId) {\r",
+											"    invalidProductId = Number(validProductId) + 100000;\r",
+											"} else {\r",
+											"    // Fallback if no valid productId exists\r",
+											"    invalidProductId = Date.now();\r",
+											"}\r",
+											"\r",
+											"// Store invalid productId in ENVIRONMENT\r",
+											"pm.environment.set(\"invalidProductId\", invalidProductId);\r",
+											"\r",
+											"console.log(\"GET Invalid Product ID set (env):\", invalidProductId);\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/products/{{validProductId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products",
+										"{{validProductId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Update",
+					"item": [
+						{
+							"name": "As a user, I should be able to update product details using a valid productId.",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Verify product update was successful\r",
+											"pm.test(\"Product updated\", () => {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {}
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"title\": \"Updated Automation Product\",\r\n  \"price\": 1099\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/products/{{productId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products",
+										"{{productId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Delete",
+					"item": [
+						{
+							"name": "As a user, I should be able to delete a product using a valid productId.",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify status code is 200 after deleting product\r",
+											"pm.test(\"TC_01 | Status code should be 200 after deleting product\", () => {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// TC_02: Verify response body is true\r",
+											"pm.test(\"TC_02 | Response body should be true after successful deletion\", () => {\r",
+											"    const response = pm.response.text();\r",
+											"    pm.expect(response).to.eql(\"true\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/products/{{productId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products",
+										"{{productId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "As a user, when I try to delete a product with an invalid productId, I should see 400 error.",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// TC_01: Verify status code is 400 for invalid productId delete\r",
+											"pm.test(\"TC_01 | Status code should be 400 for invalid productId\", () => {\r",
+											"    pm.response.to.have.status(400);\r",
+											"});\r",
+											"\r",
+											"const response = pm.response.json();\r",
+											"\r",
+											"// TC_02: Verify error name is EntityNotFoundError\r",
+											"pm.test(\"TC_02 | Error name should be EntityNotFoundError\", () => {\r",
+											"    pm.expect(response).to.have.property(\"name\", \"EntityNotFoundError\");\r",
+											"});\r",
+											"\r",
+											"// TC_03: Verify error message indicates product not found\r",
+											"pm.test(\"TC_03 | Error message should indicate product not found\", () => {\r",
+											"    pm.expect(response).to.have.property(\"message\");\r",
+											"    pm.expect(response.message.toLowerCase()).to.include(\"could not find\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/products/{{invalidProductId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"products",
+										"{{invalidProductId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{accessToken}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
