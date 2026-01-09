@@ -16,8 +16,11 @@ npm -v
 echo "Newman version:"
 npx newman -v
 
-
 echo "Running Postman tests..."
+npx newman run DemoAPIs.postman_collection.json \
+  -e DemoAPIs.postman_environment.json 
+
+echo "Generating HTML Report..."
 npx newman run DemoAPIs.postman_collection.json \
   -e DemoAPIs.postman_environment.json \
   -r htmlextra \
